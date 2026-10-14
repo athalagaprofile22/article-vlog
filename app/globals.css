@@ -1,0 +1,70 @@
+/* stylelint-disable at-rule-no-unknown */
+/* The following directives are for Tailwind CSS (PostCSS) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom smooth transition for theme switching */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+ 
+
+body {
+  color: rgb(15 23 42);
+}
+/* Hide Google Translate Top Banner and fix layout */
+.goog-te-banner-frame,
+.goog-te-banner-frame.skiptranslate,
+iframe.skiptranslate {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+}
+
+body {
+  top: 0px !important;
+  position: static !important;
+}
+
+/* Hide text highlight and tooltips */
+.goog-tooltip {
+  display: none !important;
+}
+
+.goog-tooltip:hover {
+  display: none !important;
+}
+
+.goog-text-highlight {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+ 
+@media print {
+  /* Navbar, Sidebar, Footer සහ අනෙකුත් බටන් ප්‍රින්ට් වීම වැළැක්වීම */
+  header,
+  footer,
+  aside,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  /* ප්‍රින්ට් පිටුව සුදු පැහැයෙන් සහ පිරිසිදුව තබා ගැනීම */
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  article {
+    width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+}
