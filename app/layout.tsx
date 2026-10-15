@@ -133,7 +133,7 @@ export default function RootLayout({
             </div>
 
             <p className="font-medium text-gray-700 dark:text-gray-200">© 2026 Athalaga.lk Media Hub. All rights reserved.</p>
-            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Powered by Next.js 14, TypeScript & Tailwind CSS.</p>
+            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">Powered by Athalaga.lk Media Hub </p>
           </div>
         </footer>
       </body>
