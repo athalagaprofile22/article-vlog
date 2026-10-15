@@ -174,7 +174,7 @@ export default function Navbar() {
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover group-hover:scale-105 transition-transform"
             />
             <span className="text-base sm:text-lg font-black text-slate-900 tracking-tight whitespace-nowrap">
-              Athalaga<span className="text-emerald-700">.lk</span>
+              Articles<span className="text-emerald-700">!</span>
             </span>
           </Link>
 

@@ -28,7 +28,7 @@ import {
   Send,
   Linkedin,
   Play,
-  Printer // <-- Print අයිකනය එකතු කර ඇත
+  Printer
 } from 'lucide-react';
 
 // Google Drive සහ YouTube ලින්ක් Embed URL බවට හරවන Helper Function එක
@@ -281,6 +281,13 @@ export default function PostDetailPage() {
         let currentPost: any = null;
 
         if (dbPost) {
+          // ස්වයංක්‍රීයව Database එකේ views අගය +1 කින් වැඩි කිරීම (Increment Views)
+          const currentViews = Number(dbPost.views) || Number(dbPost.view_count) || 0;
+          await supabase
+            .from('posts')
+            .update({ views: currentViews + 1 })
+            .eq('id', dbPost.id);
+
           currentPost = {
             id: dbPost.id,
             title: dbPost.title,
@@ -361,7 +368,6 @@ export default function PostDetailPage() {
     return (
       <main className="min-h-screen bg-[#f4f7f6] flex flex-col items-center justify-center p-6">
         <div className="bg-white rounded-[2.5rem] p-10 border border-slate-200/90 shadow-2xl text-center max-w-sm w-full animate-in fade-in zoom-in-95 duration-300">
-          {/* Animated Spinner with Pulsing Ring */}
           <div className="relative w-16 h-16 mx-auto mb-5 flex items-center justify-center">
             <div className="absolute inset-0 rounded-full border-4 border-emerald-100 animate-pulse" />
             <div className="absolute inset-0 rounded-full border-4 border-emerald-600 border-t-transparent animate-spin" />
@@ -375,7 +381,6 @@ export default function PostDetailPage() {
             ලිපිය සූදානම් කරමින් පවතී, කරුණාකර මොහොතක් රැඳී සිටින්න.
           </p>
 
-          {/* Decorative Skeleton Loading Lines */}
           <div className="mt-7 space-y-2.5">
             <div className="w-full h-3 bg-slate-100 rounded-full animate-pulse" />
             <div className="w-4/5 h-3 bg-slate-100 rounded-full animate-pulse mx-auto" />

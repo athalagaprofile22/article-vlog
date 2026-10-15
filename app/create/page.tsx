@@ -29,7 +29,12 @@ import {
   Send,
   MessageSquare,
   CheckCircle,
-  User
+  User,
+  BarChart3,
+  TrendingUp,
+  Globe,
+  ThumbsUp,
+  Filter
 } from 'lucide-react';
 
 function getVideoEmbedUrl(url: string): string {
@@ -56,7 +61,8 @@ function getLocalDateTimeString(date: Date = new Date()): string {
 }
 
 export default function CreatePostPage() {
-  const [activeTab, setActiveTab] = useState<'manage' | 'form' | 'messages'>('manage');
+  const [activeTab, setActiveTab] = useState<'analytics' | 'manage' | 'form' | 'messages'>('analytics');
+  const [timeFilter, setTimeFilter] = useState<'all' | 'today' | 'week' | 'month' | 'year'>('all');
 
   // Auth State
   const [session, setSession] = useState<any>(null);
@@ -452,13 +458,42 @@ export default function CreatePostPage() {
 
   const unreadMessagesCount = messagesList.filter((m) => !m.is_read).length;
 
+  // Filter Posts based on Time Filter
+  const filteredPostsList = postsList.filter((post) => {
+    if (timeFilter === 'all') return true;
+    const postDate = new Date(post.published_at || post.created_at);
+    const now = new Date();
+
+    if (timeFilter === 'today') {
+      return postDate.toDateString() === now.toDateString();
+    } else if (timeFilter === 'week') {
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return postDate >= oneWeekAgo;
+    } else if (timeFilter === 'month') {
+      return postDate.getMonth() === now.getMonth() && postDate.getFullYear() === now.getFullYear();
+    } else if (timeFilter === 'year') {
+      return postDate.getFullYear() === now.getFullYear();
+    }
+    return true;
+  });
+
+  // Analytics Metrics Calculation
+  const totalPostsCount = postsList.length;
+  const publishedPostsCount = postsList.filter((p) => p.is_published && !isPostScheduled(p)).length;
+  const totalViewsCount = filteredPostsList.reduce((acc, curr) => acc + (Number(curr.views) || Number(curr.view_count) || 0), 0);
+  const totalLikesCount = filteredPostsList.reduce((acc, curr) => acc + (Number(curr.likes_count) || 0), 0);
+  const totalMessagesCount = messagesList.length;
+
+  // Top Viewed Posts
+  const topViewedPosts = [...filteredPostsList]
+    .sort((a, b) => (Number(b.views) || Number(b.view_count) || 0) - (Number(a.views) || Number(a.view_count) || 0));
+
   // --- ADMIN DASHBOARD ---
   return (
-    <div className="min-h-screen bg-slate-100/60 text-slate-900 pb-20">
-      {/* Top Navbar - Mobile Balanced Redesign */}
-      <div className="bg-white border-b border-slate-200/80 sticky top-0 z-40 shadow-2xs">
-        <div className="max-w-5xl mx-auto px-3 sm:px-4 h-16 flex items-center justify-between gap-1.5">
-          {/* Back to Home */}
+    <div className="min-h-screen bg-slate-100/60 text-slate-900 pb-28 sm:pb-20">
+      {/* Top Navbar - Desktop Only (Hidden on Mobile) */}
+      <div className="hidden sm:block bg-white border-b border-slate-200/80 sticky top-0 z-40 shadow-2xs">
+        <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
           <Link
             href="/"
             className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 text-slate-600 flex items-center justify-center transition shrink-0"
@@ -467,47 +502,42 @@ export default function CreatePostPage() {
             <ArrowLeft className="w-4 h-4" />
           </Link>
 
-          {/* Balanced Tab Selector Header (Mobile & Desktop Friendly) */}
-          <div className="flex items-center bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 shrink-0">
+          <div className="flex items-center bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80">
             <button
               type="button"
-              onClick={() => {
-                setActiveTab('manage');
-                resetForm();
-              }}
-              className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-extrabold transition cursor-pointer ${
-                activeTab === 'manage'
-                  ? 'bg-white text-emerald-800 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+              onClick={() => setActiveTab('analytics')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
+                activeTab === 'analytics' ? 'bg-white text-emerald-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Analytics</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setActiveTab('manage'); resetForm(); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
+                activeTab === 'manage' ? 'bg-white text-emerald-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <Layers className="w-3.5 h-3.5 text-emerald-600" />
               <span>Posts</span>
             </button>
-
             <button
               type="button"
               onClick={() => setActiveTab('form')}
-              className={`flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-extrabold transition cursor-pointer ${
-                activeTab === 'form'
-                  ? 'bg-white text-emerald-800 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
+                activeTab === 'form' ? 'bg-white text-emerald-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <PlusCircle className="w-3.5 h-3.5 text-emerald-600" />
               <span>{editingPostId ? 'Edit' : 'Add'}</span>
             </button>
-
             <button
               type="button"
-              onClick={() => {
-                setActiveTab('messages');
-                fetchContactMessages();
-              }}
-              className={`relative flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-xl text-[11px] sm:text-xs font-extrabold transition cursor-pointer ${
-                activeTab === 'messages'
-                  ? 'bg-white text-emerald-800 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+              onClick={() => { setActiveTab('messages'); fetchContactMessages(); }}
+              className={`relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold transition cursor-pointer ${
+                activeTab === 'messages' ? 'bg-white text-emerald-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
@@ -520,7 +550,6 @@ export default function CreatePostPage() {
             </button>
           </div>
 
-          {/* Logout Button */}
           <button
             type="button"
             onClick={handleLogout}
@@ -532,7 +561,273 @@ export default function CreatePostPage() {
         </div>
       </div>
 
-      <main className="max-w-5xl mx-auto px-3 sm:px-4 mt-5 sm:mt-8">
+      {/* Mobile Top Header */}
+      <div className="sm:hidden bg-white border-b border-slate-200 sticky top-0 z-40 px-4 h-14 flex items-center justify-between">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700">
+          <ArrowLeft className="w-4 h-4" /> Home
+        </Link>
+        <span className="text-xs font-black uppercase tracking-wider text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full">
+          Admin Hub
+        </span>
+      </div>
+
+      <main className="max-w-5xl mx-auto px-3 sm:px-4 mt-4 sm:mt-8">
+        
+        {/* SLIDE 0: PROFESSIONAL ANALYTICS DASHBOARD */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-4 sm:space-y-6 animate-in fade-in duration-200">
+            
+            {/* Header Banner */}
+            <div className="bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 text-white rounded-3xl p-5 sm:p-8 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 pointer-events-none flex items-center justify-end pr-10">
+                <BarChart3 className="w-48 h-48" />
+              </div>
+              <div className="relative z-10">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-emerald-300 text-[11px] font-bold mb-2.5 sm:mb-3">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  Live Performance & Engagement
+                </span>
+                <h1 className="text-xl sm:text-3xl font-black tracking-tight">Professional Analytics</h1>
+                <p className="text-xs sm:text-sm text-emerald-100/80 mt-1 max-w-md font-medium">
+                  Track individual article views, total likes, and traffic across custom time periods.
+                </p>
+              </div>
+
+              {/* Time Range Filter Bar (Mobile: Smooth Horizontal Swipe with NO Gray Line) */}
+              <div className="relative z-10 flex items-center gap-1.5 bg-black/25 backdrop-blur-md p-1.5 rounded-2xl border border-white/15 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden shrink-0">
+                {(['all', 'today', 'week', 'month', 'year'] as const).map((filter) => (
+                  <button
+                    key={filter}
+                    type="button"
+                    onClick={() => setTimeFilter(filter)}
+                    className={`px-3.5 py-2 rounded-xl text-[11px] font-extrabold uppercase tracking-wider transition cursor-pointer shrink-0 ${
+                      timeFilter === filter
+                        ? 'bg-emerald-500 text-slate-950 shadow-sm'
+                        : 'text-emerald-100 hover:bg-white/10'
+                    }`}
+                  >
+                    {filter === 'all' ? 'All Time' : filter}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Stat Cards Grid */}
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              
+              {/* Total Views Card */}
+              <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-xs flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </div>
+                  <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">
+                    Views
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                    {totalViewsCount.toLocaleString()}
+                  </h3>
+                  <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-0.5">({timeFilter} range)</p>
+                </div>
+              </div>
+
+              {/* Total Likes Card */}
+              <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-xs flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center">
+                    <ThumbsUp className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </div>
+                  <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-teal-700 bg-teal-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">
+                    Likes
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                    {totalLikesCount.toLocaleString()}
+                  </h3>
+                  <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-0.5">Total reader likes</p>
+                </div>
+              </div>
+
+              {/* Total Messages Card */}
+              <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-xs flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center">
+                    <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </div>
+                  <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-sky-700 bg-sky-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">
+                    Inquiries
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+                    {totalMessagesCount}
+                  </h3>
+                  <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-0.5">
+                    {unreadMessagesCount > 0 ? `${unreadMessagesCount} unread` : 'All caught up'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Platform Status Card */}
+              <div className="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/90 shadow-xs flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <Globe className="w-4 h-4 sm:w-5 sm:h-5" />
+                  </div>
+                  <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">
+                    Status
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-xl font-black text-slate-900 tracking-tight flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Online Live
+                  </h3>
+                  <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium mt-0.5">Netlify / Supabase</p>
+                </div>
+              </div>
+
+            </div>
+
+            {/* PER-ARTICLE PERFORMANCE BREAKDOWN (Mobile: Modern Stack Cards | Desktop: Clean Table) */}
+            <div className="bg-white rounded-3xl p-4 sm:p-8 border border-slate-200/90 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 sm:mb-6 pb-4 border-b border-slate-100">
+                <div>
+                  <h3 className="text-sm sm:text-lg font-black text-slate-900 flex items-center gap-2">
+                    <BarChart3 className="w-5 h-5 text-emerald-600" />
+                    <span>Per-Article Performance Breakdown</span>
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
+                    එක් එක් ලිපිය වෙන වෙනම ලැබී ඇති Views සහ Likes ගණන
+                  </p>
+                </div>
+                <div className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-xl self-start sm:self-auto">
+                  <Filter className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Filter: <strong className="uppercase text-emerald-700">{timeFilter}</strong></span>
+                </div>
+              </div>
+
+              {topViewedPosts.length > 0 ? (
+                <>
+                  {/* MOBILE VIEW: Gorgeous Card Stack (No horizontal scrolling or weird tables on phones) */}
+                  <div className="block sm:hidden space-y-3">
+                    {topViewedPosts.map((post) => {
+                      const postViews = Number(post.views) || Number(post.view_count) || 0;
+                      const postLikes = Number(post.likes_count) || 0;
+                      return (
+                        <div
+                          key={post.id}
+                          className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-4 space-y-3 shadow-2xs"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <span className={`inline-block px-2 py-0.5 rounded text-[9px] font-extrabold uppercase mb-1 ${
+                                post.type === 'vlog' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-700'
+                              }`}>
+                                {post.type}
+                              </span>
+                              <h4 className="font-bold text-slate-900 text-xs sm:text-sm leading-snug line-clamp-2">
+                                {post.title}
+                              </h4>
+                            </div>
+                            <Link
+                              href={`/posts/${post.slug}`}
+                              target="_blank"
+                              className="p-2 bg-white border border-slate-200 rounded-xl text-slate-600 hover:text-emerald-700 shrink-0"
+                              title="View Post"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </Link>
+                          </div>
+
+                          <div className="flex items-center justify-between pt-2.5 border-t border-slate-200/60 text-xs font-bold">
+                            <div className="flex items-center gap-3">
+                              <span className="inline-flex items-center gap-1 text-emerald-800 bg-emerald-100/70 px-3 py-1 rounded-full">
+                                <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                                {postViews} Views
+                              </span>
+                              <span className="inline-flex items-center gap-1 text-teal-800 bg-teal-100/70 px-3 py-1 rounded-full">
+                                <ThumbsUp className="w-3.5 h-3.5 text-teal-600" />
+                                {postLikes} Likes
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* DESKTOP VIEW: Full Professional Table */}
+                  <div className="hidden sm:block overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-100 text-slate-400 uppercase tracking-wider text-[10px]">
+                          <th className="pb-3 font-bold">Article / Vlog Title</th>
+                          <th className="pb-3 font-bold">Type</th>
+                          <th className="pb-3 font-bold text-center">Views</th>
+                          <th className="pb-3 font-bold text-center">Likes</th>
+                          <th className="pb-3 font-bold text-right">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {topViewedPosts.map((post) => {
+                          const postViews = Number(post.views) || Number(post.view_count) || 0;
+                          const postLikes = Number(post.likes_count) || 0;
+                          return (
+                            <tr key={post.id} className="hover:bg-slate-50/70 transition">
+                              <td className="py-3.5 pr-4 max-w-md">
+                                <div className="font-bold text-slate-900 truncate">{post.title}</div>
+                                <div className="text-[11px] text-slate-400 font-mono truncate">/{post.slug}</div>
+                              </td>
+                              <td className="py-3.5 whitespace-nowrap">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
+                                  post.type === 'vlog' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-700'
+                                }`}>
+                                  {post.type}
+                                </span>
+                              </td>
+                              <td className="py-3.5 text-center whitespace-nowrap">
+                                <span className="inline-flex items-center gap-1 font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">
+                                  <Eye className="w-3 h-3 text-emerald-600" />
+                                  {postViews}
+                                </span>
+                              </td>
+                              <td className="py-3.5 text-center whitespace-nowrap">
+                                <span className="inline-flex items-center gap-1 font-extrabold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-full">
+                                  <ThumbsUp className="w-3 h-3 text-teal-600" />
+                                  {postLikes}
+                                </span>
+                              </td>
+                              <td className="py-3.5 text-right whitespace-nowrap">
+                                <Link
+                                  href={`/posts/${post.slug}`}
+                                  target="_blank"
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 font-bold transition"
+                                >
+                                  <span>View</span>
+                                  <ExternalLink className="w-3 h-3" />
+                                </Link>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-12 text-xs text-slate-400">
+                  මෙම කාල සීමාව තුළ ලිපි කිසිවක් හමු නොවීය.
+                </div>
+              )}
+            </div>
+
+          </div>
+        )}
+
         {/* SLIDE 1: MANAGE POSTS */}
         {activeTab === 'manage' && (
           <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-sm p-4 sm:p-8 animate-in fade-in duration-200">
@@ -554,10 +849,7 @@ export default function CreatePostPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    resetForm();
-                    setActiveTab('form');
-                  }}
+                  onClick={() => { resetForm(); setActiveTab('form'); }}
                   className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold rounded-xl transition shadow-sm cursor-pointer"
                 >
                   <PlusCircle className="w-3.5 h-3.5" />
@@ -572,7 +864,6 @@ export default function CreatePostPage() {
               </div>
             ) : postsList.length > 0 ? (
               <>
-                {/* 1. MOBILE VIEW: Card List */}
                 <div className="block md:hidden space-y-3">
                   {postsList.map((post) => {
                     const scheduled = isPostScheduled(post);
@@ -669,7 +960,6 @@ export default function CreatePostPage() {
                   })}
                 </div>
 
-                {/* 2. DESKTOP VIEW: Full Table */}
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
@@ -691,11 +981,9 @@ export default function CreatePostPage() {
                               <div className="text-[11px] text-slate-400 font-mono truncate">{post.slug}</div>
                             </td>
                             <td className="py-3.5 whitespace-nowrap">
-                              <span
-                                className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
-                                  post.type === 'vlog' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-700'
-                                }`}
-                              >
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase ${
+                                post.type === 'vlog' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-700'
+                              }`}>
                                 {post.type}
                               </span>
                             </td>
@@ -813,10 +1101,7 @@ export default function CreatePostPage() {
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  resetForm();
-                  setActiveTab('manage');
-                }}
+                onClick={() => { resetForm(); setActiveTab('manage'); }}
                 className="text-xs font-bold text-slate-500 hover:text-slate-800 bg-slate-100 px-3 py-1.5 rounded-lg transition cursor-pointer"
               >
                 Back to List
@@ -841,7 +1126,6 @@ export default function CreatePostPage() {
             )}
 
             <div className="space-y-5 sm:space-y-6">
-              {/* Post Type Selector */}
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-700 mb-2">Post Type</label>
                 <div className="grid grid-cols-2 gap-3">
@@ -870,7 +1154,6 @@ export default function CreatePostPage() {
                 </div>
               </div>
 
-              {/* Title & Slug */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5">Title</label>
@@ -896,7 +1179,6 @@ export default function CreatePostPage() {
                 </div>
               </div>
 
-              {/* Thumbnail Upload */}
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-700 mb-2">
                   Cover Image / Thumbnail (Direct File Upload)
@@ -933,7 +1215,6 @@ export default function CreatePostPage() {
                 </div>
               </div>
 
-              {/* Video URL */}
               {type === 'vlog' && (
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5">
@@ -949,7 +1230,6 @@ export default function CreatePostPage() {
                 </div>
               )}
 
-              {/* Excerpt */}
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5">Short Excerpt (කෙටි හැඳින්වීම)</label>
                 <textarea
@@ -961,7 +1241,6 @@ export default function CreatePostPage() {
                 />
               </div>
 
-              {/* Content Body */}
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5">Full Content (සම්පූර්ණ විස්තරය)</label>
                 <textarea
@@ -973,7 +1252,6 @@ export default function CreatePostPage() {
                 />
               </div>
 
-              {/* Tags */}
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5">Tags (කොමා වලින් වෙන් කරන්න)</label>
                 <input
@@ -985,7 +1263,6 @@ export default function CreatePostPage() {
                 />
               </div>
 
-              {/* SCHEDULE TOGGLE BOX */}
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 transition-all">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -1021,14 +1298,10 @@ export default function CreatePostPage() {
                       onChange={(e) => setPublishedAt(e.target.value)}
                       className="w-full sm:w-auto px-4 py-2 rounded-xl border border-slate-200 text-xs sm:text-sm outline-none focus:border-sky-600 focus:ring-2 focus:ring-sky-100 bg-white font-medium"
                     />
-                    <p className="text-[11px] text-sky-700 font-medium mt-1">
-                      * මෙම වේලාව පැමිණි පසු ලිපිය ස්වයංක්‍රීයව Live Site එකෙහි ප්‍රසිද්ධ කෙරේ.
-                    </p>
                   </div>
                 )}
               </div>
 
-              {/* ACTION BUTTONS */}
               <div className="flex flex-col sm:flex-row items-center gap-2.5 sm:gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
@@ -1066,16 +1339,13 @@ export default function CreatePostPage() {
                     ) : (
                       <Clock className="w-4 h-4" />
                     )}
-                    <span>Schedule Post (කාලසටහන්ගත කරන්න)</span>
+                    <span>Schedule Post</span>
                   </button>
                 )}
 
                 <button
                   type="button"
-                  onClick={() => {
-                    resetForm();
-                    setActiveTab('manage');
-                  }}
+                  onClick={() => { resetForm(); setActiveTab('manage'); }}
                   className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer text-center"
                 >
                   Cancel
@@ -1085,7 +1355,7 @@ export default function CreatePostPage() {
           </div>
         )}
 
-        {/* SLIDE 3: MESSAGES TAB (Mobile Balanced & Fixed Overflow) */}
+        {/* SLIDE 3: MESSAGES TAB */}
         {activeTab === 'messages' && (
           <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-sm p-4 sm:p-8 animate-in fade-in duration-200">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
@@ -1118,7 +1388,6 @@ export default function CreatePostPage() {
                       msg.is_read ? 'bg-slate-50/50 border-slate-200 opacity-80' : 'bg-white border-emerald-300 ring-2 ring-emerald-500/10'
                     }`}
                   >
-                    {/* Header: User Info & Actions */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
                       <div className="flex items-center gap-3 min-w-0">
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
@@ -1182,7 +1451,6 @@ export default function CreatePostPage() {
                       </p>
                     )}
 
-                    {/* Message Body with Fixed Word Wrap / Overflow Protection */}
                     <p className="text-xs sm:text-sm text-slate-600 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-100 break-words whitespace-pre-wrap overflow-hidden">
                       {msg.message}
                     </p>
@@ -1198,6 +1466,73 @@ export default function CreatePostPage() {
           </div>
         )}
       </main>
+
+      {/* MOBILE ONLY: Glassmorphism Bottom Navigation Bar */}
+      <div className="sm:hidden fixed bottom-3 left-3 right-3 z-50 transform-gpu">
+        <div className="bg-white/85 backdrop-blur-md border border-white/40 rounded-3xl px-3 py-2 shadow-xl shadow-emerald-950/10 flex items-center justify-around">
+          
+          <button
+            type="button"
+            onClick={() => setActiveTab('analytics')}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition cursor-pointer ${
+              activeTab === 'analytics' ? 'text-emerald-700 bg-emerald-50/80 font-black' : 'text-slate-500 font-semibold'
+            }`}
+          >
+            <BarChart3 className="w-4 h-4 mb-0.5" />
+            <span className="text-[10px]">Stats</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setActiveTab('manage'); resetForm(); }}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition cursor-pointer ${
+              activeTab === 'manage' ? 'text-emerald-700 bg-emerald-50/80 font-black' : 'text-slate-500 font-semibold'
+            }`}
+          >
+            <Layers className="w-4 h-4 mb-0.5" />
+            <span className="text-[10px]">Posts</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('form')}
+            className={`flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition cursor-pointer ${
+              activeTab === 'form' ? 'text-emerald-700 bg-emerald-50/80 font-black' : 'text-slate-500 font-semibold'
+            }`}
+          >
+            <PlusCircle className="w-4 h-4 mb-0.5" />
+            <span className="text-[10px]">{editingPostId ? 'Edit' : 'Add'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setActiveTab('messages'); fetchContactMessages(); }}
+            className={`relative flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl transition cursor-pointer ${
+              activeTab === 'messages' ? 'text-emerald-700 bg-emerald-50/80 font-black' : 'text-slate-500 font-semibold'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4 mb-0.5" />
+            <span className="text-[10px]">Inbox</span>
+            {unreadMessagesCount > 0 && (
+              <span className="absolute top-0 right-1 bg-rose-500 text-white text-[9px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center animate-pulse">
+                {unreadMessagesCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex flex-col items-center justify-center py-1 px-2.5 rounded-2xl text-rose-500 hover:bg-rose-50 transition cursor-pointer font-semibold"
+            title="Logout"
+          >
+            <LogOut className="w-4 h-4 mb-0.5" />
+            <span className="text-[10px]">Exit</span>
+          </button>
+
+        </div>
+      </div>
+
     </div>
   );
 }

@@ -80,7 +80,7 @@ export default function RootLayout({
 
               {/* Facebook */}
               <a
-                href="https://facebook.com/your-page-name" 
+                href="https://web.facebook.com/athalaga.lk" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition shadow-xs"
@@ -94,7 +94,7 @@ export default function RootLayout({
 
               {/* TikTok */}
               <a
-                href="https://tiktok.com/@your-profile" 
+                href="https://www.tiktok.com/@athalaga.lk?_r=1&_t=ZS-9AY0sQRSige" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white flex items-center justify-center hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 transition shadow-xs"
@@ -108,7 +108,7 @@ export default function RootLayout({
 
               {/* WhatsApp */}
               <a
-                href="https://wa.me/your-phone-number" 
+                href="https://wa.me/+94712955068" 
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center hover:bg-emerald-600 hover:text-white dark:hover:bg-emerald-600 dark:hover:text-white transition shadow-xs"
