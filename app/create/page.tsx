@@ -417,7 +417,7 @@ export default function CreatePostPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="csandeepa2230@gmail.com"
+                placeholder="example12@gmail.com"
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm outline-none focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
               />
             </div>
