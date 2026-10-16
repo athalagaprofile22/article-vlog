@@ -369,6 +369,21 @@ export default function CreatePostPage() {
       if (error) {
         setFormMessage({ type: 'error', text: error.message });
       } else {
+        // Direct publish වූ විට Subscribers ලාට ස්වයංක්‍රීයව Newsletter Email Dispatch කිරීම
+        if (actionType === 'direct_publish') {
+          fetch('/api/send-newsletter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title,
+              slug,
+              excerpt,
+              type,
+              thumbnailUrl: thumbnailUrl || null,
+            }),
+          }).catch((err) => console.error('Auto notification failed:', err));
+        }
+
         resetForm();
         await fetchAllPosts();
         setActiveTab('manage');
@@ -379,6 +394,21 @@ export default function CreatePostPage() {
       if (error) {
         setFormMessage({ type: 'error', text: error.message });
       } else {
+        // Direct publish වූ විට Subscribers ලාට ස්වයංක්‍රීයව Newsletter Email Dispatch කිරීම
+        if (actionType === 'direct_publish') {
+          fetch('/api/send-newsletter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title,
+              slug,
+              excerpt,
+              type,
+              thumbnailUrl: thumbnailUrl || null,
+            }),
+          }).catch((err) => console.error('Auto notification failed:', err));
+        }
+
         resetForm();
         await fetchAllPosts();
         setActiveTab('manage');
@@ -712,7 +742,7 @@ export default function CreatePostPage() {
 
               {topViewedPosts.length > 0 ? (
                 <>
-                  {/* MOBILE VIEW: Gorgeous Card Stack (No horizontal scrolling or weird tables on phones) */}
+                  {/* MOBILE VIEW: Gorgeous Card Stack */}
                   <div className="block sm:hidden space-y-3">
                     {topViewedPosts.map((post) => {
                       const postViews = Number(post.views) || Number(post.view_count) || 0;
@@ -791,13 +821,13 @@ export default function CreatePostPage() {
                               </td>
                               <td className="py-3.5 text-center whitespace-nowrap">
                                 <span className="inline-flex items-center gap-1 font-extrabold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full">
-                                  <Eye className="w-3 h-3 text-emerald-600" />
+                                  <Eye className="w-3.5 h-3.5 text-emerald-600" />
                                   {postViews}
                                 </span>
                               </td>
                               <td className="py-3.5 text-center whitespace-nowrap">
                                 <span className="inline-flex items-center gap-1 font-extrabold text-teal-800 bg-teal-50 px-2.5 py-1 rounded-full">
-                                  <ThumbsUp className="w-3 h-3 text-teal-600" />
+                                  <ThumbsUp className="w-3.5 h-3.5 text-teal-600" />
                                   {postLikes}
                                 </span>
                               </td>
@@ -808,7 +838,7 @@ export default function CreatePostPage() {
                                   className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 font-bold transition"
                                 >
                                   <span>View</span>
-                                  <ExternalLink className="w-3 h-3" />
+                                  <ExternalLink className="w-3.5 h-3.5" />
                                 </Link>
                               </td>
                             </tr>

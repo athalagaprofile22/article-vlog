@@ -2,10 +2,11 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
-import Link from "next/link"; // <-- Link එක import කර ඇත
+import Link from "next/link";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
-import { Globe, MessageSquare } from 'lucide-react'; // <-- MessageSquare අයිකනය එකතු කර ඇත
+import { Globe, MessageSquare } from 'lucide-react';
+import NewsletterPopup from '@/components/NewsletterPopup';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -60,6 +61,9 @@ export default function RootLayout({
 
         <Navbar />
         {children}
+
+        {/* Newsletter Popup Component */}
+        <NewsletterPopup />
 
         {/* Footer with Social Media, Website & Contact Links */}
         <footer translate="no" className="notranslate mt-20 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-12 text-center text-sm text-gray-500 dark:text-gray-400 transition-colors">

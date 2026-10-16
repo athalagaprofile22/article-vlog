@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { initialPosts } from '@/data/posts';
+import TimeAgo from '@/components/TimeAgo';
 import PostInteractions from '@/components/PostInteractions';
 import {
   ArrowLeft,
@@ -17,7 +18,6 @@ import {
   Sparkles,
   CheckCircle2,
   ChevronRight,
-  Loader2,
   BookOpen,
   ExternalLink,
   Globe,
@@ -31,7 +31,6 @@ import {
   Printer
 } from 'lucide-react';
 
-// Google Drive සහ YouTube ලින්ක් Embed URL බවට හරවන Helper Function එක
 function getVideoEmbedUrl(url: string): string {
   if (!url) return '';
 
@@ -149,7 +148,7 @@ function RichPostContent({ content }: { content: string }) {
   if (!content) {
     return (
       <p className="text-slate-400 italic text-sm">
-        මෙම ලිපියේ වැඩිදුර විස්තර ළඟදීම යාවත්කාලීන කෙරේ.
+        More details for this story will be updated soon.
       </p>
     );
   }
@@ -272,23 +271,35 @@ export default function PostDetailPage() {
       setMobileVideoPlay(false);
 
       try {
+        const localMatch = (initialPosts || []).find((p: any) => p.slug === slug);
+        if (localMatch) {
+          setPost({
+            ...localMatch,
+            author: {
+              name: localMatch.author?.name || 'Athalaga.lk Editorial',
+              role: 'Verified Media Hub',
+              avatar: '/image/logo.png',
+            },
+          });
+          setLoading(false);
+        }
+
         const { data: dbPost } = await supabase
           .from('posts')
           .select('*')
           .eq('slug', slug)
           .single();
 
-        let currentPost: any = null;
-
         if (dbPost) {
-          // ස්වයංක්‍රීයව Database එකේ views අගය +1 කින් වැඩි කිරීම (Increment Views)
           const currentViews = Number(dbPost.views) || Number(dbPost.view_count) || 0;
-          await supabase
+          
+          supabase
             .from('posts')
             .update({ views: currentViews + 1 })
-            .eq('id', dbPost.id);
+            .eq('id', dbPost.id)
+            .then();
 
-          currentPost = {
+          const currentPost = {
             id: dbPost.id,
             title: dbPost.title,
             slug: dbPost.slug,
@@ -309,51 +320,41 @@ export default function PostDetailPage() {
               avatar: '/image/logo.png',
             },
           };
-        } else {
-          const localMatch = (initialPosts || []).find((p: any) => p.slug === slug);
-          if (localMatch) {
-            currentPost = {
-              ...localMatch,
-              author: {
-                name: localMatch.author?.name || 'Athalaga.lk Editorial',
-                role: 'Verified Media Hub',
-                avatar: '/image/logo.png',
-              },
-            };
-          }
+          setPost(currentPost);
         }
 
-        setPost(currentPost);
+        setLoading(false);
 
         const nowIso = new Date().toISOString();
-        const { data: recentDb } = await supabase
+        supabase
           .from('posts')
           .select('*')
           .eq('is_published', true)
           .neq('slug', slug)
           .or(`published_at.lte.${nowIso},published_at.is.null`)
           .order('created_at', { ascending: false })
-          .limit(4);
+          .limit(4)
+          .then(({ data: recentDb }) => {
+            const formattedRecent = (recentDb || []).map((item: any) => ({
+              id: item.id,
+              title: item.title,
+              slug: item.slug,
+              type: item.type,
+              thumbnail:
+                item.thumbnail_url ||
+                'https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=600&q=80',
+              createdAt: item.published_at || item.created_at,
+            }));
 
-        const formattedRecent = (recentDb || []).map((item: any) => ({
-          id: item.id,
-          title: item.title,
-          slug: item.slug,
-          type: item.type,
-          thumbnail:
-            item.thumbnail_url ||
-            'https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=600&q=80',
-          createdAt: item.published_at || item.created_at,
-        }));
+            const fallbackRelated = (initialPosts || [])
+              .filter((p: any) => p.slug !== slug)
+              .slice(0, 4);
 
-        const fallbackRelated = (initialPosts || [])
-          .filter((p: any) => p.slug !== slug)
-          .slice(0, 4);
+            setRelatedPosts([...formattedRecent, ...fallbackRelated].slice(0, 4));
+          });
 
-        setRelatedPosts([...formattedRecent, ...fallbackRelated].slice(0, 4));
       } catch (err) {
         console.error('Error loading post:', err);
-      } finally {
         setLoading(false);
       }
     }
@@ -361,33 +362,23 @@ export default function PostDetailPage() {
     fetchPostData();
   }, [slug]);
 
-  // ==============================================================
-  // PREMIUM LOADING ANIMATION (Article Click Loading Screen)
-  // ==============================================================
-  if (loading) {
+  if (loading && !post) {
     return (
-      <main className="min-h-screen bg-[#f4f7f6] flex flex-col items-center justify-center p-6">
-        <div className="bg-white rounded-[2.5rem] p-10 border border-slate-200/90 shadow-2xl text-center max-w-sm w-full animate-in fade-in zoom-in-95 duration-300">
-          <div className="relative w-16 h-16 mx-auto mb-5 flex items-center justify-center">
-            <div className="absolute inset-0 rounded-full border-4 border-emerald-100 animate-pulse" />
-            <div className="absolute inset-0 rounded-full border-4 border-emerald-600 border-t-transparent animate-spin" />
-            <Loader2 className="w-7 h-7 text-emerald-700 animate-pulse" />
-          </div>
-
-          <h3 className="text-base font-black text-slate-900 tracking-tight">
-            Loading Story...
-          </h3>
-          <p className="text-xs text-slate-400 mt-1.5 leading-relaxed font-medium">
-            ලිපිය සූදානම් කරමින් පවතී, කරුණාකර මොහොතක් රැඳී සිටින්න.
-          </p>
-
-          <div className="mt-7 space-y-2.5">
-            <div className="w-full h-3 bg-slate-100 rounded-full animate-pulse" />
-            <div className="w-4/5 h-3 bg-slate-100 rounded-full animate-pulse mx-auto" />
-            <div className="w-3/5 h-3 bg-slate-100 rounded-full animate-pulse mx-auto" />
-          </div>
+      <div className="min-h-screen bg-[#f4f7f6] dark:bg-slate-950 flex flex-col items-center justify-center p-4">
+        <div className="fixed top-0 inset-x-0 h-1 bg-slate-200/50 dark:bg-slate-800 z-50 overflow-hidden">
+          <div className="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600 animate-pulse origin-left w-full" />
         </div>
-      </main>
+
+        <div className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-[2rem] p-6 shadow-lg border border-slate-200/80 dark:border-slate-800 flex flex-col items-center text-center space-y-4">
+          <div className="relative w-12 h-12 flex items-center justify-center">
+            <div className="absolute inset-0 rounded-full border-3 border-emerald-100 dark:border-emerald-950/60" />
+            <div className="absolute inset-0 rounded-full border-3 border-emerald-600 dark:border-emerald-400 border-t-transparent animate-spin" />
+          </div>
+          <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+            Opening Story...
+          </p>
+        </div>
+      </div>
     );
   }
 
@@ -399,27 +390,20 @@ export default function PostDetailPage() {
         </div>
         <h1 className="text-2xl font-black text-slate-900">Post Not Found</h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-md">
-          ඔබ සොයන ලිපිය හෝ වීඩියෝව ඉවත් කර හෝ වෙනස් කර තිබිය හැක.
+          The story or vlog you are looking for might have been removed or updated.
         </p>
         <Link
           href="/"
           className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition shadow-md"
         >
           <ArrowLeft className="w-4 h-4" />
-          මුල් පිටුවට යන්න
+          <span>Back to Home</span>
         </Link>
       </div>
     );
   }
 
   const readingMinutes = calculateReadingTime(post.content || post.excerpt);
-  const formattedDate = post.createdAt
-    ? new Date(post.createdAt).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      })
-    : 'Recent';
 
   return (
     <div className="min-h-screen bg-slate-50/70 text-slate-800 pb-20">
@@ -548,7 +532,7 @@ export default function PostDetailPage() {
 
                   <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-400">
                     <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                    {formattedDate}
+                    <TimeAgo date={post.createdAt} />
                   </span>
 
                   <span className="text-slate-300">•</span>
@@ -681,7 +665,7 @@ export default function PostDetailPage() {
               <div className="flex items-center justify-between pb-3 mb-4 border-b border-slate-100">
                 <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                   <Sparkles className="w-4 h-4 text-emerald-600" />
-                  <span>තවත් ජනප්‍රිය නිර්මාණ</span>
+                  <span>Trending Stories</span>
                 </h3>
               </div>
 
@@ -719,7 +703,7 @@ export default function PostDetailPage() {
                 </div>
               ) : (
                 <p className="text-xs text-slate-400 text-center py-4">
-                  වෙනත් ලිපි කිසිවක් නොමැත.
+                  No other stories found.
                 </p>
               )}
 
@@ -727,7 +711,7 @@ export default function PostDetailPage() {
                 href="/"
                 className="mt-5 w-full py-2.5 rounded-xl bg-slate-100 hover:bg-emerald-50 text-slate-700 hover:text-emerald-800 text-xs font-bold flex items-center justify-center gap-1.5 transition"
               >
-                <span>සියලුම ලිපි සහ වීඩියෝ බලන්න</span>
+                <span>View All Articles & Vlogs</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </Link>
             </div>
@@ -738,10 +722,10 @@ export default function PostDetailPage() {
                   Athalaga.lk Network
                 </span>
                 <h3 className="text-lg font-black leading-snug">
-                  ඔබට අවශ්‍ය දක්ෂ ශිල්පීන් සහ සේවාවන් එකම තැනකින්!
+                  Find Trusted Professionals & Services!
                 </h3>
                 <p className="text-xs text-emerald-100/75 mt-2 leading-relaxed">
-                  ශ්‍රී ලංකාව පුරා විසිරී සිටින විශ්වාසවන්ත වෘත්තිකයන් සහ සේවා සපයන්නන් සමඟ පහසුවෙන් සම්බන්ධ වන්න.
+                  Connect easily with verified service providers and skilled workers across Sri Lanka.
                 </p>
                 <Link
                   href="/"

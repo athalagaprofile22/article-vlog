@@ -33,21 +33,21 @@ import {
 
 const slides = [
   {
-    image: 'https://images.unsplash.com/photo-1546708973-b339540b5162?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://i.ibb.co/bMqf63rt/bg.png',
     title: 'Ella Nine Arch Bridge - Scenic Highland Journey',
     location: 'Ella, Sri Lanka',
     category: 'Travel Vlog',
     badgeColor: 'bg-rose-600'
   },
   {
-    image: 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://i.ibb.co/5V2QtYH/bg1.png',
     title: 'Modern Web & Digital Innovation Guide 2026',
     location: 'Colombo, Sri Lanka',
     category: 'Tech Article',
     badgeColor: 'bg-emerald-600'
   },
   {
-    image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://i.ibb.co/39vWy2Wz/bg3.jpg',
     title: 'Colombo Street Food Tour & Vibrant Nightlife',
     location: 'Galle Face, Colombo',
     category: 'Food Vlog',

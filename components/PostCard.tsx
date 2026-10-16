@@ -3,6 +3,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import TimeAgo from '@/components/TimeAgo';
 import {
   Video,
   FileText,
@@ -40,13 +41,6 @@ function getReadingTime(text?: string): string {
 
 export default function PostCard({ post }: PostCardProps) {
   const isVlog = post.type === 'vlog';
-  const formattedDate = post.createdAt
-    ? new Date(post.createdAt).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      })
-    : 'Recent';
 
   return (
     <Link
@@ -98,11 +92,11 @@ export default function PostCard({ post }: PostCardProps) {
           </div>
         )}
 
-        {/* Bottom Info inside Image Frame */}
+        {/* Bottom Info inside Image Frame (Using TimeAgo) */}
         <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-[11px] font-semibold text-white">
           <span className="inline-flex items-center gap-1 bg-slate-950/75 px-2.5 py-0.5 rounded-full">
             <Calendar className="w-3 h-3 text-emerald-400" />
-            {formattedDate}
+            {post.createdAt ? <TimeAgo date={post.createdAt} /> : 'Recent'}
           </span>
           <span className="inline-flex items-center gap-1 bg-slate-950/75 px-2.5 py-0.5 rounded-full">
             <Clock className="w-3 h-3 text-emerald-400" />
