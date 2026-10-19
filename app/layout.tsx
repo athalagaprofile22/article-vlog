@@ -35,25 +35,39 @@ export default function RootLayout({
             top: 0px !important;
             position: static !important;
           }
+          #goog-gt-tt, 
+          .goog-te-balloon-frame {
+            display: none !important;
+          }
+          .goog-text-highlight {
+            background: none !important;
+            box-shadow: none !important;
+          }
         `}</style>
       </head>
       <body
         className={`${inter.className} bg-[#f4f7f6] dark:bg-slate-950 min-h-screen text-slate-900 dark:text-slate-100 antialiased transition-colors duration-200`}
         suppressHydrationWarning
       >
+        {/* Google Translate Mount Container */}
         <div id="google_translate_element" style={{ display: "none" }} />
 
+        {/* 1. Global Callback Function */}
         <Script id="google-translate-init" strategy="beforeInteractive">
           {`
             function googleTranslateElementInit() {
-              new google.translate.TranslateElement({
-                pageLanguage: 'en',
-                includedLanguages: 'en,si,ta',
-                autoDisplay: false
-              }, 'google_translate_element');
+              if (window.google && window.google.translate) {
+                new window.google.translate.TranslateElement({
+                  pageLanguage: 'en',
+                  includedLanguages: 'en,si,ta',
+                  autoDisplay: false
+                }, 'google_translate_element');
+              }
             }
           `}
         </Script>
+
+        {/* 2. Google Translate Official Source Script */}
         <Script
           src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
           strategy="afterInteractive"

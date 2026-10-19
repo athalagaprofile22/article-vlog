@@ -3,10 +3,11 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { supabase } from '@/lib/supabase';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 export async function POST(req: Request) {
   try {
+    // Resend client එක ඇතුළතට දැමීමෙන් Build time එකේදී error වීම වැළකේ
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
     const { title, slug, excerpt, type, thumbnailUrl } = await req.json();
 
     if (!title || !slug) {

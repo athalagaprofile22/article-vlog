@@ -55,7 +55,7 @@ const slides = [
   }
 ];
 
-const quickTopics = ['All Topics', 'Travel', 'Tech', 'Food', 'Culture', 'Lifestyle', 'Services'];
+const quickTopics = ['All Topics', 'New Updates', 'Services'];
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<'all' | 'vlog' | 'article'>('all');

@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Globe, Bell, Shield, ChevronDown, CheckCheck, Video, FileText, Sparkles, X } from 'lucide-react';
+import { Globe, Bell, Shield, Check, CheckCheck, Video, FileText, Sparkles, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface NotificationItem {
@@ -14,9 +14,16 @@ interface NotificationItem {
   created_at: string;
 }
 
+const languages = [
+  { code: 'en', label: 'English', short: 'EN', flag: '🇬🇧' },
+  { code: 'si', label: 'සිංහල', short: 'සිං', flag: '🇱🇰' },
+  { code: 'ta', label: 'தமிழ்', short: 'த', flag: '🇱🇰' },
+];
+
 export default function Navbar() {
   const [langOpen, setLangOpen] = useState(false);
-  const [selectedLang, setSelectedLang] = useState('EN');
+  const [currentLang, setCurrentLang] = useState('en');
+  const langDropdownRef = useRef<HTMLDivElement>(null);
 
   // Notifications State
   const [notifOpen, setNotifOpen] = useState(false);
@@ -28,13 +35,41 @@ export default function Navbar() {
   const [latestPostPopup, setLatestPostPopup] = useState<NotificationItem | null>(null);
   const [showPopup, setShowPopup] = useState(false);
 
-  const languages = [
-    { code: 'EN', label: 'English' },
-    { code: 'SI', label: 'සිංහල' },
-    { code: 'TA', label: 'தமிழ்' },
-  ];
+  // Cookie එකෙන් දැනට සක්‍රිය භාෂාව හඳුනාගැනීම
+  useEffect(() => {
+    const cookies = document.cookie.split(';');
+    const googtrans = cookies.find((c) => c.trim().startsWith('googtrans='));
+    if (googtrans) {
+      const lang = googtrans.split('/').pop()?.trim().toLowerCase();
+      if (lang && ['en', 'si', 'ta'].includes(lang)) {
+        setCurrentLang(lang);
+      }
+    }
+  }, []);
 
-  // අලුත්ම posts Supabase එකෙන් ලබා ගැනීම සහ Welcome Popup පෙන්වීම
+  // Google Translate භාෂාව මාරු කිරීමේ ක්‍රමවේදය
+  const changeLanguage = (langCode: string) => {
+    setCurrentLang(langCode);
+    setLangOpen(false);
+
+    // 1. Google Translate Cookies set කිරීම (Localhost සහ Production Domain දෙකටම අනුකූලව)
+    const hostname = window.location.hostname;
+    document.cookie = `googtrans=/en/${langCode}; path=/;`;
+    if (hostname !== 'localhost') {
+      document.cookie = `googtrans=/en/${langCode}; path=/; domain=.${hostname};`;
+    }
+
+    // 2. Google Translate internal combo box එක trigger කිරීම
+    const selectEl = document.querySelector('.goog-te-combo') as HTMLSelectElement | null;
+    if (selectEl) {
+      selectEl.value = langCode;
+      selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+    } else {
+      window.location.reload();
+    }
+  };
+
+  // Supabase වෙතින් අලුත්ම posts සහ Notifications ලබා ගැනීම
   useEffect(() => {
     async function loadNotifications() {
       try {
@@ -60,7 +95,6 @@ export default function Navbar() {
           const unread = finalNotifications.filter((item) => !readIds.includes(item.id)).length;
           setUnreadCount(unread);
 
-          // අවසානෙට දාපු අලුත්ම Post එක තෝරා ගැනීම
           const latestItem = finalNotifications[0];
           if (latestItem) {
             const dismissedPopupIds: string[] = JSON.parse(
@@ -82,14 +116,15 @@ export default function Navbar() {
     loadNotifications();
   }, []);
 
-  // Click outside to close dropdown
+  // Dropdowns වලින් පිටත ක්ලික් කළ විට වැසී යාම
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        notifDropdownRef.current &&
-        !notifDropdownRef.current.contains(event.target as Node)
-      ) {
+      const target = event.target as Node;
+      if (notifDropdownRef.current && !notifDropdownRef.current.contains(target)) {
         setNotifOpen(false);
+      }
+      if (langDropdownRef.current && !langDropdownRef.current.contains(target)) {
+        setLangOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -112,7 +147,6 @@ export default function Navbar() {
     setNotifOpen(false);
   };
 
-  // Welcome Popup එක Close / Dismiss කිරීම
   const handleDismissPopup = () => {
     setShowPopup(false);
     if (latestPostPopup) {
@@ -162,10 +196,13 @@ export default function Navbar() {
     setUnreadCount(0);
   };
 
+  const activeLangObj = languages.find((l) => l.code === currentLang) || languages[0];
+
   return (
     <>
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-xs">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+          
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-2 sm:gap-2.5 shrink-0 group">
             <img
@@ -178,37 +215,47 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Right Actions */}
-          <div className="flex items-center gap-1.5 sm:gap-3">
-            {/* Language Selector */}
-            <div className="relative">
+          {/* Right Actions Container */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
+            
+            {/* Real Google Translate Switcher */}
+            <div className="relative" ref={langDropdownRef}>
               <button
                 type="button"
                 onClick={() => setLangOpen(!langOpen)}
-                className="inline-flex items-center gap-1 sm:gap-1.5 text-xs font-semibold text-slate-700 hover:text-emerald-800 bg-slate-50 sm:bg-transparent px-2 py-1.5 rounded-lg sm:rounded-none transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-full text-xs font-bold text-slate-700 bg-slate-100/80 hover:bg-emerald-50 hover:text-emerald-800 border border-slate-200/60 transition active:scale-95 cursor-pointer"
+                title="Change Language"
+                aria-label="Change Language"
               >
-                <Globe className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                <span className="hidden md:inline">EN / සිං / த</span>
-                <span className="inline md:hidden font-bold">{selectedLang}</span>
-                <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
+                <Globe className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span className="text-sm shrink-0">{activeLangObj.flag}</span>
+                <span className="hidden sm:inline">{activeLangObj.label}</span>
+                <span className="inline sm:hidden uppercase font-extrabold">{activeLangObj.short}</span>
               </button>
 
               {langOpen && (
-                <div className="absolute right-0 mt-2 w-32 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-50">
+                <div className="absolute right-0 mt-2 w-36 bg-white rounded-2xl shadow-xl border border-slate-100 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 border-b border-slate-100">
+                    Language
+                  </div>
                   {languages.map((lang) => (
                     <button
                       key={lang.code}
-                      onClick={() => {
-                        setSelectedLang(lang.code);
-                        setLangOpen(false);
-                      }}
-                      className={`w-full text-left px-3 py-1.5 text-xs font-semibold hover:bg-emerald-50 hover:text-emerald-800 transition cursor-pointer ${
-                        selectedLang === lang.code
-                          ? 'text-emerald-700 bg-emerald-50/50'
-                          : 'text-slate-700'
+                      type="button"
+                      onClick={() => changeLanguage(lang.code)}
+                      className={`w-full flex items-center justify-between px-3 py-2 text-xs font-semibold transition cursor-pointer text-left ${
+                        currentLang === lang.code
+                          ? 'bg-emerald-50 text-emerald-800 font-bold'
+                          : 'text-slate-700 hover:bg-slate-50 hover:text-emerald-700'
                       }`}
                     >
-                      {lang.label}
+                      <div className="flex items-center gap-2">
+                        <span>{lang.flag}</span>
+                        <span>{lang.label}</span>
+                      </div>
+                      {currentLang === lang.code && (
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      )}
                     </button>
                   ))}
                 </div>
@@ -232,7 +279,6 @@ export default function Navbar() {
                 )}
               </button>
 
-              {/* Notification Menu Box */}
               {notifOpen && (
                 <div className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-16 sm:top-full mt-2 sm:w-80 bg-white rounded-2xl shadow-2xl border border-slate-200/80 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-150">
                   <div className="flex items-center justify-between px-4 py-3 bg-slate-50 border-b border-slate-100">
@@ -293,7 +339,6 @@ export default function Navbar() {
                             </div>
                           </Link>
 
-                          {/* Clear Button (X) */}
                           <button
                             type="button"
                             onClick={(e) => handleClearSingleNotification(e, item.id)}
@@ -327,9 +372,7 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* ==============================================================
-          WELCOME / RECENT POST POPUP TOAST (Mobile Balanced & English)
-      ============================================================== */}
+      {/* Welcome / Recent Post Popup Toast */}
       {latestPostPopup && (
         <div
           className={`fixed bottom-3 right-3 left-3 sm:left-auto sm:bottom-5 sm:right-5 z-50 max-w-xs sm:max-w-sm w-full bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-3 sm:p-4 transition-all duration-500 transform ${
@@ -372,7 +415,6 @@ export default function Navbar() {
               </div>
             </div>
 
-            {/* Close / Dismiss Button (X) */}
             <button
               type="button"
               onClick={handleDismissPopup}

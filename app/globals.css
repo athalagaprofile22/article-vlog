@@ -68,3 +68,22 @@ body {
     margin: 0 !important;
   }
 }
+/* Hide default Google Translate Top Banner and Tooltips */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-gadget-simple {
+  display: none !important;
+}
+
+body {
+  top: 0px !important;
+}
+
+#goog-gt-tt, 
+.goog-te-balloon-frame {
+  display: none !important;
+}
+
+.goog-text-highlight {
+  background: none !important;
+  box-shadow: none !important;
+}
