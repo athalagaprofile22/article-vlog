@@ -28,7 +28,9 @@ import {
   Send,
   Linkedin,
   Play,
-  Printer
+  Printer,
+  Mail,
+  Phone
 } from 'lucide-react';
 
 function getVideoEmbedUrl(url: string): string {
@@ -63,6 +65,49 @@ function calculateReadingTime(text: string): number {
 function SmartLinkBadge({ url, customLabel }: { url: string; customLabel?: string }) {
   const lower = url.toLowerCase();
 
+  // 1. Email links
+  if (lower.startsWith('mailto:') || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(url)) {
+    const cleanEmail = url.replace(/^mailto:/i, '');
+    return (
+      <a
+        href={`mailto:${cleanEmail}`}
+        className="inline-flex items-center gap-1.5 px-3 py-1 mx-1 my-0.5 rounded-full text-xs font-bold border transition shadow-2xs align-middle hover:scale-[1.02] active:scale-95 bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
+      >
+        <Mail className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+        <span className="truncate max-w-[220px]">{customLabel || cleanEmail}</span>
+        <ExternalLink className="w-3 h-3 opacity-60 shrink-0" />
+      </a>
+    );
+  }
+
+  // 2. WhatsApp links or Phone numbers
+  if (
+    lower.includes('wa.me') ||
+    lower.includes('whatsapp.com') ||
+    /^(?:\+94|0)\d{9}$/.test(url.replace(/[\s-]/g, ''))
+  ) {
+    let cleanNumber = url.replace(/[^0-9]/g, '');
+    if (cleanNumber.startsWith('0')) {
+      cleanNumber = '94' + cleanNumber.substring(1);
+    }
+    const targetUrl = url.startsWith('http') ? url : `https://wa.me/${cleanNumber}`;
+
+    return (
+      <a
+        href={targetUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 px-3 py-1 mx-1 my-0.5 rounded-full text-xs font-bold border transition shadow-2xs align-middle hover:scale-[1.02] active:scale-95 bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700"
+      >
+        <MessageCircle className="w-3.5 h-3.5 shrink-0" />
+        <span className="truncate max-w-[220px]">{customLabel || url}</span>
+        <ExternalLink className="w-3 h-3 opacity-80 shrink-0" />
+      </a>
+    );
+  }
+
+  // 3. Regular Website / Social URLs
+  const normalizedUrl = url.startsWith('http') ? url : `https://${url}`;
   let label = customLabel || url.replace(/^https?:\/\/(www\.)?/, '').split('/')[0];
   let badgeClass = 'bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100';
   let IconComponent: any = Globe;
@@ -79,10 +124,6 @@ function SmartLinkBadge({ url, customLabel }: { url: string; customLabel?: strin
     label = customLabel || 'Instagram';
     badgeClass = 'bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-100';
     IconComponent = Instagram;
-  } else if (lower.includes('wa.me') || lower.includes('whatsapp.com')) {
-    label = customLabel || 'WhatsApp';
-    badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100';
-    IconComponent = MessageCircle;
   } else if (lower.includes('tiktok.com')) {
     label = customLabel || 'TikTok';
     badgeClass = 'bg-slate-900 text-white border-slate-800 hover:bg-slate-800';
@@ -95,15 +136,11 @@ function SmartLinkBadge({ url, customLabel }: { url: string; customLabel?: strin
     label = customLabel || 'LinkedIn';
     badgeClass = 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100';
     IconComponent = Linkedin;
-  } else if (lower.includes('twitter.com') || lower.includes('x.com')) {
-    label = customLabel || 'X (Twitter)';
-    badgeClass = 'bg-slate-100 text-slate-900 border-slate-300 hover:bg-slate-200';
-    IconComponent = Globe;
   }
 
   return (
     <a
-      href={url}
+      href={normalizedUrl}
       target="_blank"
       rel="noopener noreferrer"
       className={`inline-flex items-center gap-1.5 px-3 py-1 mx-1 my-0.5 rounded-full text-xs font-bold border transition shadow-2xs align-middle hover:scale-[1.02] active:scale-95 ${badgeClass}`}
@@ -116,17 +153,20 @@ function SmartLinkBadge({ url, customLabel }: { url: string; customLabel?: strin
 }
 
 function renderInlineContent(text: string) {
-  const tokenRegex = /(\[[^\]]+\]\(https?:\/\/[^\s)]+\)|\*\*[^*]+\*\*|https?:\/\/[^\s<]+[^<.,:;"')\]\s])/g;
+  // Regex to catch markdown links, bold text, URLs, domain names, emails, and phone/whatsapp numbers
+  const tokenRegex = /(\[[^\]]+\]\([^\s)]+\)|\*\*[^*]+\*\*|https?:\/\/[^\s<]+[^<.,:;"')\]\s]|[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|(?:athalaga\.lk[^\s]*)|(?:\+94\s?\d{2,3}[\s-]?\d{6,7}|07\d{1}[\s-]?\d{7}))/gi;
   const parts = text.split(tokenRegex);
 
   return parts.map((part, index) => {
     if (!part) return null;
 
-    const mdLinkMatch = part.match(/^\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)$/);
+    // Markdown link: [Title](URL)
+    const mdLinkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
     if (mdLinkMatch) {
       return <SmartLinkBadge key={index} customLabel={mdLinkMatch[1]} url={mdLinkMatch[2]} />;
     }
 
+    // Bold text: **Bold**
     const boldMatch = part.match(/^\*\*([^*]+)\*\*$/);
     if (boldMatch) {
       return (
@@ -136,8 +176,20 @@ function renderInlineContent(text: string) {
       );
     }
 
-    if (/^https?:\/\//.test(part)) {
-      return <SmartLinkBadge key={index} url={part} />;
+    // Email address
+    if (/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(part)) {
+      return <SmartLinkBadge key={index} url={`mailto:${part}`} customLabel={part} />;
+    }
+
+    // Direct domain (athalaga.lk) or Web URL
+    if (/^(https?:\/\/|athalaga\.lk)/i.test(part)) {
+      const fullUrl = part.startsWith('http') ? part : `https://${part}`;
+      return <SmartLinkBadge key={index} url={fullUrl} />;
+    }
+
+    // Phone / WhatsApp number: +94... or 07...
+    if (/^(?:\+94\s?\d{2,3}[\s-]?\d{6,7}|07\d{1}[\s-]?\d{7})$/.test(part.trim())) {
+      return <SmartLinkBadge key={index} url={part.trim()} />;
     }
 
     return <React.Fragment key={index}>{part}</React.Fragment>;
